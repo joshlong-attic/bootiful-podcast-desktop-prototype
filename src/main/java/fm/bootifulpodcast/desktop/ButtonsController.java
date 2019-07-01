@@ -72,8 +72,8 @@ public class ButtonsController implements Initializable {
 	}
 
 	private void evaluatePublishButtonState() {
-		var active = (this.connected.get() && this.validPodcast.get());
-		publishButton.setDisable(!active);
+		var canPublish = (this.connected.get() && this.validPodcast.get());
+		publishButton.setDisable(!canPublish);
 	}
 
 	@Override
