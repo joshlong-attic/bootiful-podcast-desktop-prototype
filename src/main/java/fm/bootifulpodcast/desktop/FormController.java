@@ -119,8 +119,9 @@ public class FormController implements Initializable {
 				HBox.setHgrow(label, Priority.ALWAYS);
 
 				var fileProperty = tuple.getT2();
-				var button = tuple.getT3();
 				fileProperty.addListener((observableValue, oldValue, newValue) -> label.setText(newValue.getAbsolutePath()));
+
+				var button = tuple.getT3();
 				button.setOnMouseClicked(e -> Optional
 					.ofNullable(this.fileChooser.showOpenDialog(this.stage.get()))
 					.ifPresent(fileProperty::set));
