@@ -48,11 +48,14 @@ public class FormController implements Initializable {
 	public Label filePromptLabel;
 
 	private final AtomicReference<Stage> stage = new AtomicReference<>();
+	private final AtomicBoolean valid = new AtomicBoolean(false);
+
 	private final PodcastModel podcastModel = new PodcastModel();
 
 	private final Messages messages;
 	private final ApplicationEventPublisher publisher;
 	private final FileChooser fileChooser;
+
 
 	FormController(Messages messages, ApplicationEventPublisher publisher) {
 		this.messages = messages;
@@ -86,8 +89,6 @@ public class FormController implements Initializable {
 		}
 
 	}
-
-	private final AtomicBoolean valid = new AtomicBoolean(false);
 
 	@Override
 	public void initialize(URL url, ResourceBundle resourceBundle) {
