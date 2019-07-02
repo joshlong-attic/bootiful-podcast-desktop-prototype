@@ -1,7 +1,9 @@
 package fm.bootifulpodcast.desktop;
 
+import fm.bootifulpodcast.desktop.client.ApiClient;
 import fm.bootifulpodcast.desktop.client.ApiConnectedEvent;
 import fm.bootifulpodcast.desktop.client.ApiDisconnectedEvent;
+import fm.bootifulpodcast.desktop.client.PodcastArchiveBuilder;
 import javafx.application.Platform;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -9,8 +11,10 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -18,7 +22,10 @@ import org.springframework.stereotype.Component;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Log4j2
 @Component
@@ -28,11 +35,17 @@ public class ButtonsController implements Initializable {
 
 	private final ImageView connectedImageView, disconnectedImageView;
 	private final AtomicBoolean connected = new AtomicBoolean(false);
-	private final AtomicBoolean validPodcast = new AtomicBoolean(false);
+	private final AtomicReference<PodcastModel> podcast = new AtomicReference<>();
+	private final ApiClient client;
+	private final Executor executor;
+	private final ApplicationEventPublisher publisher;
 	public Button newPodcastButton, publishButton, saveMediaToFileButton;
 	public HBox buttons;
 
-	ButtonsController() {
+	ButtonsController(ApiClient client, Executor executor, ApplicationEventPublisher publisher) {
+		this.client = client;
+		this.publisher = publisher;
+		this.executor = executor;
 		this.disconnectedImageView = this.buildImageViewFrom(new ClassPathResource("images/disconnected-icon.png"));
 		this.connectedImageView = this.buildImageViewFrom(new ClassPathResource("images/connected-icon.png"));
 	}
@@ -57,22 +70,22 @@ public class ButtonsController implements Initializable {
 		this.evaluatePublishButtonState();
 	}
 
-	@EventListener
-	public void invalidPodcast(PodcastValidationFailedEvent failed) {
+	@EventListener(PodcastValidationFailedEvent.class)
+	public void invalidPodcast() {
 		log.debug("the podcast is invalid.");
-		this.validPodcast.set(false);
+		this.podcast.set(null);
 		this.evaluatePublishButtonState();
 	}
 
 	@EventListener
-	public void validPodcast(PodcastValidationSuccessEvent success) {
+	public void validPodcast(PodcastValidationSuccessEvent pvse) {
 		log.debug("the podcast is valid.");
-		this.validPodcast.set(true);
+		this.podcast.set(pvse.getSource());
 		this.evaluatePublishButtonState();
 	}
 
 	private void evaluatePublishButtonState() {
-		var canPublish = (this.connected.get() && this.validPodcast.get());
+		var canPublish = (this.connected.get() && this.podcast.get() != null);
 		publishButton.setDisable(!canPublish);
 	}
 
@@ -84,6 +97,28 @@ public class ButtonsController implements Initializable {
 		children.addAll(this.newPodcastButton, this.publishButton);
 		this.newPodcastButton.setDisable(false);
 		this.connectedIcon.setGraphic(this.disconnectedImageView);
+		this.publishButton.setOnMouseClicked(e -> this.executor.execute(
+			new PublishingRunnable(this.podcast.get(), this.client)));
+	}
+
+	@RequiredArgsConstructor
+	static class PublishingRunnable implements Runnable {
+
+		private final PodcastModel model;
+		private final ApiClient client;
+
+		@Override
+		public void run() {
+			var uuid = UUID.randomUUID().toString();
+			var title = model.titleProperty().get();
+			var description = model.descriptionProperty().get();
+			var intro = model.introductionFileProperty().get();
+			var interview = model.interviewFileProperty().get();
+			var archiveFile = new PodcastArchiveBuilder(title, description, uuid)
+				.addMp3Media(intro, interview)
+				.build();
+			this.client.beginProduction(uuid, archiveFile);
+		}
 	}
 
 	@SneakyThrows

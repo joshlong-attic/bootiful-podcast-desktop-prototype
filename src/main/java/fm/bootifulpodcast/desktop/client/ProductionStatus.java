@@ -28,19 +28,15 @@ public class ProductionStatus {
 
 		this.executor = ex;
 		this.template = rt;
-		this.uid = uid;
 		Assert.notNull(this.executor, "the executor must be non-null");
-		Assert.notNull(this.template,
-				"the " + RestTemplate.class.getName() + " must be non-null");
-		Assert.notNull(this.uid, "the UID must be non-null");
-		this.errorMessage = errMsg;
+		Assert.notNull(this.template, "the " + RestTemplate.class.getName() + " must be non-null");
+		Assert.notNull(uid, "the UID must be non-null");
 		this.statusUrl = statusUrl;
-		this.published = published;
-		this.httpStatus = status;
-		this.rootServerUrl = serverRootUrl;
+
+//		this.rootServerUrl = serverRootUrl;
 	}
 
-	public String getUid() {
+/*	public String getUid() {
 		return uid;
 	}
 
@@ -58,25 +54,19 @@ public class ProductionStatus {
 
 	public URI getStatusUrl() {
 		return statusUrl;
-	}
+	}*/
 
-	private String uid;
+	private URI statusUrl ;
 
-	private boolean published;
-
-	private String errorMessage;
-
-	private HttpStatus httpStatus;
-
-	private URI statusUrl, rootServerUrl;
-
+/*
 	public CompletableFuture<URI> checkStatus() {
 		Assert.notNull(this.executor, "the executor must not be null");
 		return CompletableFuture.supplyAsync(this::doPollProductionStatus, this.executor);
 	}
+*/
 
 	@SneakyThrows
-	private URI doPollProductionStatus() {
+	private URI pollProductionStatus() {
 		var parameterizedTypeReference = new ParameterizedTypeReference<Map<String, String>>() {
 		};
 		while (true) {

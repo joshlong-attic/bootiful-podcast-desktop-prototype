@@ -60,10 +60,10 @@ public class PodcastArchiveBuilder {
 		addMediaFilesToPackage(wav, srcFiles);
 
 		try (var outputStream = new BufferedOutputStream(new FileOutputStream(zipFile));
-				var zipOutputStream = new ZipOutputStream(outputStream)) {
+							var zipOutputStream = new ZipOutputStream(outputStream)) {
 			for (var fileToZip : srcFiles) {
 				try (var inputStream = new BufferedInputStream(
-						new FileInputStream(fileToZip))) {
+					new FileInputStream(fileToZip))) {
 					var zipEntry = new ZipEntry(fileToZip.getName());
 					zipOutputStream.putNextEntry(zipEntry);
 					StreamUtils.copy(inputStream, zipOutputStream);
@@ -74,7 +74,7 @@ public class PodcastArchiveBuilder {
 	}
 
 	private static void addElementFor(Document doc, Element root, String elementName,
-			Map<String, String> attrs) {
+																																			Map<String, String> attrs) {
 		Element element = doc.createElement(elementName);
 		attrs.forEach(element::setAttribute);
 		root.appendChild(element);
@@ -128,9 +128,18 @@ public class PodcastArchiveBuilder {
 		files.add(m.getIntro());
 	}
 
-	public PodcastArchiveBuilder addMedia(String ext, File intro, File interv) {
+	private PodcastArchiveBuilder addMedia(String ext, File intro, File interv) {
 		return this.addMedia(ext, new Media(ext, intro, interv));
 	}
+
+	public PodcastArchiveBuilder addMp3Media(File intro, File interview) {
+		return this.addMedia(MP3_EXT, intro, interview);
+	}
+
+	public PodcastArchiveBuilder addWavMedia(File intro, File interview) {
+		return this.addMedia(WAV_EXT, intro, interview);
+	}
+
 
 	private PodcastArchiveBuilder addMedia(String ext, Media media) {
 		this.media.put(ext, Optional.of(media));
@@ -139,8 +148,8 @@ public class PodcastArchiveBuilder {
 
 	public File build() {
 		this.archivePackage = doCreatePackage(this.title, this.description, this.uid,
-				this.media.get(MP3_EXT).orElse(null),
-				this.media.get(WAV_EXT).orElse(null));
+			this.media.get(MP3_EXT).orElse(null),
+			this.media.get(WAV_EXT).orElse(null));
 		return this.archivePackage;
 	}
 

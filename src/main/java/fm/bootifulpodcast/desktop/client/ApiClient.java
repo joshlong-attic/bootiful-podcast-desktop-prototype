@@ -1,6 +1,9 @@
 package fm.bootifulpodcast.desktop.client;
 
+import fm.bootifulpodcast.desktop.PodcastProductionCompletedEvent;
+import fm.bootifulpodcast.desktop.PodcastProductionStartedEvent;
 import fm.bootifulpodcast.desktop.StageReadyEvent;
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -60,6 +63,7 @@ public class ApiClient {
 	}
 
 	/*
+			This detects the
 			we register this monitor thread *after* other controllers
  		are active and able to receive events. can't launch this in constructor because
  		it'll be connected *before* the UI components.
@@ -94,7 +98,9 @@ public class ApiClient {
 		}
 	}
 
-	public ProductionStatus beginProduction(String uid, File archive) {
+	public void beginProduction(String uid, File archive) {
+		this.publisher.publishEvent(new PodcastProductionStartedEvent(uid));
+
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 		var resource = new FileSystemResource(archive);
@@ -103,12 +109,36 @@ public class ApiClient {
 		var requestEntity = new HttpEntity<MultiValueMap<String, Object>>(body, headers);
 		var url = this.serverUrl + "/podcasts/" + uid;
 		var response = restTemplate.postForEntity(url, requestEntity, String.class);
-		var good = response.getStatusCode().is2xxSuccessful();
+//		var good = response.getStatusCode().is2xxSuccessful();
 		var location = response.getHeaders().getLocation();
 		Assert.notNull(location, "the location URI must be non-null");
-		return new ProductionStatus(URI.create(this.serverUrl), this.executor,
-			this.restTemplate, null, good, uid, response.getStatusCode(),
-			URI.create(this.serverUrl + location.getPath()));
+		var uri = URI.create(this.serverUrl + location.getPath());
+		var finalMediaUri = this.pollProductionStatus(uri);
+
+		this.publisher.publishEvent(new PodcastProductionCompletedEvent(uid, finalMediaUri));
 	}
 
+	@SneakyThrows
+	private URI pollProductionStatus(URI statusUrl) {
+		var parameterizedTypeReference = new ParameterizedTypeReference<Map<String, String>>() {
+		};
+		while (true) {
+			var result = this.restTemplate.exchange(statusUrl, HttpMethod.GET, null,
+				parameterizedTypeReference);
+			Assert.isTrue(result.getStatusCode().is2xxSuccessful(),
+				"the HTTP request must return a valid 20x series HTTP status");
+			var status = Objects.requireNonNull(result.getBody());
+			var key = "media-url";
+			if (status.containsKey(key)) {
+				return URI.create(status.get(key));
+			}
+			else {
+				var seconds = 10;
+				TimeUnit.SECONDS.sleep(seconds);
+				log.debug("sleeping " + seconds
+					+ "s while checking the production status at '" + statusUrl
+					+ "'.");
+			}
+		}
+	}
 }

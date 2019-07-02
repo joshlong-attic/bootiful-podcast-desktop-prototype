@@ -42,6 +42,15 @@ public class FrameController implements Initializable {
 		this.executor = executor;
 	}
 
+	@EventListener
+	public void podcastCompleted(PodcastProductionCompletedEvent ding) {
+
+		log.info("the podcast has been completed " +
+			"and is available for download at " +
+			ding.getSource().getMedia());
+
+	}
+
 	@Override
 	public void initialize(URL url, ResourceBundle resourceBundle) {
 
