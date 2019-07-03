@@ -3,7 +3,6 @@ package fm.bootifulpodcast.desktop;
 import fm.bootifulpodcast.desktop.client.ApiClient;
 import fm.bootifulpodcast.desktop.client.ApiConnectedEvent;
 import fm.bootifulpodcast.desktop.client.ApiDisconnectedEvent;
-import fm.bootifulpodcast.desktop.client.PodcastArchiveBuilder;
 import javafx.application.Platform;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -97,29 +96,17 @@ public class ButtonsController implements Initializable {
 		children.addAll(this.newPodcastButton, this.publishButton);
 		this.newPodcastButton.setDisable(false);
 		this.connectedIcon.setGraphic(this.disconnectedImageView);
-		this.publishButton.setOnMouseClicked(e -> this.executor.execute(
-			new PublishingRunnable(this.podcast.get(), this.client)));
-	}
-
-	@RequiredArgsConstructor
-	static class PublishingRunnable implements Runnable {
-
-		private final PodcastModel model;
-		private final ApiClient client;
-
-		@Override
-		public void run() {
+		this.publishButton.setOnMouseClicked(e -> {
+			var model = this.podcast.get();
 			var uuid = UUID.randomUUID().toString();
 			var title = model.titleProperty().get();
 			var description = model.descriptionProperty().get();
 			var intro = model.introductionFileProperty().get();
 			var interview = model.interviewFileProperty().get();
-			var archiveFile = new PodcastArchiveBuilder(title, description, uuid)
-				.addMp3Media(intro, interview)
-				.build();
-			this.client.beginProduction(uuid, archiveFile);
-		}
+			this.client.produce(uuid, title, description, intro, interview);
+		});
 	}
+
 
 	@SneakyThrows
 	private ImageView buildImageViewFrom(Resource resource) {

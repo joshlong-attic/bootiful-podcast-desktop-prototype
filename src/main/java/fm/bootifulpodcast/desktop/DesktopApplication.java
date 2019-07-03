@@ -10,7 +10,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
@@ -50,6 +54,16 @@ public class DesktopApplication {
 	@Bean
 	ScheduledExecutorService executor() {
 		return Executors.newScheduledThreadPool(threadPoolCount());
+	}
+
+	@Bean
+	TaskExecutor taskExecutor() {
+		return new ConcurrentTaskExecutor(executor());
+	}
+
+	@Bean
+	TaskScheduler taskScheduler() {
+		return new ConcurrentTaskScheduler(executor());
 	}
 
 	@Bean

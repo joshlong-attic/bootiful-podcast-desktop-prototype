@@ -13,6 +13,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -52,21 +53,21 @@ public class ApiClient {
 		this.restTemplate = restTemplate;
 		this.publisher = publisher;
 
-		Assert.hasText(serverUrl, "the server URL provided is null");
+		Assert.hasText(serverUrl, "The server URL provided is null");
 		this.serverUrl = serverUrl.endsWith("/")
 			? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
 		this.actuatorUrl = this.serverUrl + "/actuator/health";
 
-		log.debug("the server URL is " + this.serverUrl + " and the actuator URL is "
+		log.debug("The server URL is " + this.serverUrl + " and the actuator URL is "
 			+ this.actuatorUrl);
 
 	}
 
 	/*
-			This detects the
-			we register this monitor thread *after* other controllers
- 		are active and able to receive events. can't launch this in constructor because
- 		it'll be connected *before* the UI components.
+			An event is published only once, as soon as the API
+			is connected or disconnected. We can't afford to poll
+			for the connection until other components managed by other controllers
+			are able to respond, once the stage is ready.
 	 */
 	@EventListener(StageReadyEvent.class)
 	public void stageIsReady() {
@@ -90,7 +91,7 @@ public class ApiClient {
 		}
 		catch (Exception e) {
 			if (e instanceof ResourceAccessException || e instanceof SocketException) {
-				log.debug("couldn't connect to " + this.actuatorUrl);
+				log.debug("Could not connect to " + this.actuatorUrl);
 			}
 			if (this.connected.compareAndSet(true, false)) {
 				publisher.publishEvent(new ApiDisconnectedEvent());
@@ -98,9 +99,26 @@ public class ApiClient {
 		}
 	}
 
-	public void beginProduction(String uid, File archive) {
+	@Async
+	public void produce(String uid, String title, String description, File introduction, File interview) {
 		this.publisher.publishEvent(new PodcastProductionStartedEvent(uid));
+		var archive = this.createArchive(uid, title, description, introduction, interview);
+		try {
+			var uri = this.submitForProduction(uid, archive);
+			this.publisher.publishEvent(new PodcastProductionCompletedEvent(uid, uri));
+		}
+		finally {
+			Assert.isTrue(!archive.exists() || archive.delete(), "The file " + archive.getAbsolutePath() + " hasn't been deleted, but should be.");
+		}
+	}
 
+	private File createArchive(String uuid, String title, String description, File intro, File interview) {
+		return new PodcastArchiveBuilder(title, description, uuid)
+			.addMp3Media(intro, interview)
+			.build();
+	}
+
+	private URI submitForProduction(String uid, File archive) {
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 		var resource = new FileSystemResource(archive);
@@ -109,13 +127,10 @@ public class ApiClient {
 		var requestEntity = new HttpEntity<MultiValueMap<String, Object>>(body, headers);
 		var url = this.serverUrl + "/podcasts/" + uid;
 		var response = restTemplate.postForEntity(url, requestEntity, String.class);
-//		var good = response.getStatusCode().is2xxSuccessful();
 		var location = response.getHeaders().getLocation();
-		Assert.notNull(location, "the location URI must be non-null");
+		Assert.notNull(location, "The location URI must be non-null");
 		var uri = URI.create(this.serverUrl + location.getPath());
-		var finalMediaUri = this.pollProductionStatus(uri);
-
-		this.publisher.publishEvent(new PodcastProductionCompletedEvent(uid, finalMediaUri));
+		return this.pollProductionStatus(uri);
 	}
 
 	@SneakyThrows
@@ -126,7 +141,7 @@ public class ApiClient {
 			var result = this.restTemplate.exchange(statusUrl, HttpMethod.GET, null,
 				parameterizedTypeReference);
 			Assert.isTrue(result.getStatusCode().is2xxSuccessful(),
-				"the HTTP request must return a valid 20x series HTTP status");
+				"The HTTP request must return a valid 20x series HTTP status");
 			var status = Objects.requireNonNull(result.getBody());
 			var key = "media-url";
 			if (status.containsKey(key)) {
@@ -135,7 +150,7 @@ public class ApiClient {
 			else {
 				var seconds = 10;
 				TimeUnit.SECONDS.sleep(seconds);
-				log.debug("sleeping " + seconds
+				log.debug("Sleeping " + seconds
 					+ "s while checking the production status at '" + statusUrl
 					+ "'.");
 			}
