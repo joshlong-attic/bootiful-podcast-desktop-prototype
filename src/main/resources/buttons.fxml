@@ -26,8 +26,6 @@
                 <Button fx:id="publishButton" text="Publish"/>
                 <Button fx:id="saveMediaToFileButton" text="Save File"/>
             </HBox>
-
-
         </right>
     </BorderPane>
 </VBox>

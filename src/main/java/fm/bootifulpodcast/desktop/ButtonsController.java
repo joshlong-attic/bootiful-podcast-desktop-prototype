@@ -18,9 +18,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.UUID;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,27 +54,38 @@ public class ButtonsController implements Initializable {
 		Platform.runLater(() -> this.connectedIcon.setGraphic(iv));
 	}
 
-	@EventListener(ApiDisconnectedEvent.class)
-	public void disconnect() {
-		log.info("disconnected");
+	@EventListener
+	public void disconnect(ApiDisconnectedEvent e) {
+		log.info("disconnected (" + e.getClass().getName() + ")");
 		this.connected.set(false);
 		this.updateConnectedIcon(this.disconnectedImageView);
 		this.evaluatePublishButtonState();
 	}
 
-	@EventListener(ApiConnectedEvent.class)
-	public void connected() {
-		log.info("connected");
+	@EventListener
+	public void connected(ApiConnectedEvent e) {
+		log.info("connected (" + e.getClass().getName() + ")");
 		this.connected.set(true);
 		this.updateConnectedIcon(this.connectedImageView);
 		this.evaluatePublishButtonState();
 	}
 
-	@EventListener(PodcastValidationFailedEvent.class)
-	public void invalidPodcast() {
+	@EventListener
+	public void invalidPodcast(PodcastValidationFailedEvent pvfe) {
 		log.debug("the podcast is invalid.");
 		this.podcast.set(null);
 		this.evaluatePublishButtonState();
+	}
+
+	@EventListener
+	public void productionStarted(PodcastProductionStartedEvent pse) {
+		List.of(this.publishButton, this.newPodcastButton)
+				.forEach(btn -> btn.setDisable(true));
+	}
+
+	@EventListener
+	public void productionFinished(PodcastProductionCompletedEvent ppce) {
+		List.of(this.newPodcastButton).forEach(btn -> btn.setDisable(false));
 	}
 
 	@EventListener

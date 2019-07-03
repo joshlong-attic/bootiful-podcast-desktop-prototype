@@ -1,5 +1,6 @@
 package fm.bootifulpodcast.desktop;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -155,6 +156,20 @@ public class FormController implements Initializable {
 	private Tuple3<Label, SimpleObjectProperty<File>, Button> fileSelectionTuple(
 			Label label, SimpleObjectProperty<File> prop, Button btn) {
 		return Tuples.of(label, prop, btn);
+	}
+
+	@EventListener
+	public void loadEvent(PodcastLoadEvent ple) {
+		Platform.runLater(() -> {
+			var source = ple.getSource();
+			this.podcastModel.descriptionProperty()
+					.setValue(source.descriptionProperty().getValue());
+			this.podcastModel.titleProperty().setValue(source.titleProperty().getValue());
+			this.podcastModel.interviewFileProperty()
+					.setValue(source.interviewFileProperty().getValue());
+			this.podcastModel.introductionFileProperty()
+					.setValue(source.introductionFileProperty().getValue());
+		});
 	}
 
 }

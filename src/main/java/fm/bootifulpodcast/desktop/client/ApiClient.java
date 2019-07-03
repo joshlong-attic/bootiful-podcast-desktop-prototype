@@ -110,8 +110,9 @@ public class ApiClient {
 			this.publisher.publishEvent(new PodcastProductionCompletedEvent(uid, uri));
 		}
 		finally {
-			Assert.isTrue(!archive.exists() || archive.delete(), "The file "
-					+ archive.getAbsolutePath() + " hasn't been deleted, but should be.");
+			Assert.isTrue(!archive.exists() || archive.delete(),
+					"The file " + archive.getAbsolutePath()
+							+ " could not be deleted, but should be.");
 		}
 	}
 
