@@ -12,4 +12,5 @@ public class PodcastValidationFailedEvent extends ApplicationEvent {
 	public PodcastModel getSource() {
 		return (PodcastModel) super.getSource();
 	}
+
 }

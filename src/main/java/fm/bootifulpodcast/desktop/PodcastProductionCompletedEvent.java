@@ -21,7 +21,11 @@ public class PodcastProductionCompletedEvent extends ApplicationEvent {
 	@Builder
 	@Getter
 	public static class PodcastProductionOutput {
+
 		private String uid;
+
 		private URI media;
+
 	}
+
 }

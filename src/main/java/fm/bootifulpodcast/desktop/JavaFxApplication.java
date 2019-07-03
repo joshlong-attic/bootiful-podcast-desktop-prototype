@@ -27,9 +27,9 @@ public class JavaFxApplication extends Application {
 			context.registerBean(HostServices.class, this::getHostServices);
 		};
 		this.context = new SpringApplicationBuilder()//
-			.sources(DesktopApplication.class)//
-			.initializers(initializer)//
-			.run(getParameters().getRaw().toArray(new String[0]));
+				.sources(DesktopApplication.class)//
+				.initializers(initializer)//
+				.run(getParameters().getRaw().toArray(new String[0]));
 	}
 
 	@Override

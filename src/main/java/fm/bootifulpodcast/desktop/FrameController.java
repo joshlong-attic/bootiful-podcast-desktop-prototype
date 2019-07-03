@@ -16,9 +16,10 @@ import java.util.concurrent.Executor;
 @Component
 public class FrameController implements Initializable {
 
-
 	private final ApplicationEventPublisher publisher;
+
 	private final Executor executor;
+
 	private final Messages messages;
 
 	@FXML
@@ -34,9 +35,8 @@ public class FrameController implements Initializable {
 		log.info("stage is finished");
 	}
 
-	FrameController(Executor executor,
-																	ApplicationEventPublisher publisher,
-																	Messages messages) {
+	FrameController(Executor executor, ApplicationEventPublisher publisher,
+			Messages messages) {
 		this.messages = messages;
 		this.publisher = publisher;
 		this.executor = executor;
@@ -45,15 +45,12 @@ public class FrameController implements Initializable {
 	@EventListener
 	public void podcastCompleted(PodcastProductionCompletedEvent ding) {
 
-		log.info("the podcast has been completed " +
-			"and is available for download at " +
-			ding.getSource().getMedia());
-
+		log.info("the podcast has been completed " + "and is available for download at "
+				+ ding.getSource().getMedia());
 	}
 
 	@Override
 	public void initialize(URL url, ResourceBundle resourceBundle) {
-
 	}
 
 }

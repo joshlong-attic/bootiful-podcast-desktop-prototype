@@ -32,9 +32,11 @@ public class DesktopApplication {
 	}
 
 	@Bean
-	ApiClient apiClient(@Value("${podcast.api.url}") String serverUrl, ApplicationEventPublisher publisher) {
+	ApiClient apiClient(@Value("${podcast.api.url}") String serverUrl,
+			ApplicationEventPublisher publisher) {
 		var apiConnectionMonitorInterval = 5;
-		return new ApiClient(serverUrl, executor(), publisher, restTemplate(), apiConnectionMonitorInterval);
+		return new ApiClient(serverUrl, executor(), publisher, restTemplate(),
+				apiConnectionMonitorInterval);
 	}
 
 	@Bean

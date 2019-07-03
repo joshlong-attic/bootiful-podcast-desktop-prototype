@@ -10,10 +10,8 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -33,20 +31,23 @@ public class ButtonsController implements Initializable {
 	public Label connectedIcon;
 
 	private final ImageView connectedImageView, disconnectedImageView;
+
 	private final AtomicBoolean connected = new AtomicBoolean(false);
+
 	private final AtomicReference<PodcastModel> podcast = new AtomicReference<>();
+
 	private final ApiClient client;
-	private final Executor executor;
-	private final ApplicationEventPublisher publisher;
+
 	public Button newPodcastButton, publishButton, saveMediaToFileButton;
+
 	public HBox buttons;
 
-	ButtonsController(ApiClient client, Executor executor, ApplicationEventPublisher publisher) {
+	ButtonsController(ApiClient client) {
 		this.client = client;
-		this.publisher = publisher;
-		this.executor = executor;
-		this.disconnectedImageView = this.buildImageViewFrom(new ClassPathResource("images/disconnected-icon.png"));
-		this.connectedImageView = this.buildImageViewFrom(new ClassPathResource("images/connected-icon.png"));
+		this.disconnectedImageView = this.buildImageViewFrom(
+				new ClassPathResource("images/disconnected-icon.png"));
+		this.connectedImageView = this
+				.buildImageViewFrom(new ClassPathResource("images/connected-icon.png"));
 	}
 
 	private void updateConnectedIcon(ImageView iv) {
@@ -99,14 +100,12 @@ public class ButtonsController implements Initializable {
 		this.publishButton.setOnMouseClicked(e -> {
 			var model = this.podcast.get();
 			var uuid = UUID.randomUUID().toString();
-			var title = model.titleProperty().get();
-			var description = model.descriptionProperty().get();
-			var intro = model.introductionFileProperty().get();
-			var interview = model.interviewFileProperty().get();
-			this.client.produce(uuid, title, description, intro, interview);
+			this.client.produce(uuid, model.titleProperty().get(),
+					model.descriptionProperty().get(),
+					model.introductionFileProperty().get(),
+					model.interviewFileProperty().get());
 		});
 	}
-
 
 	@SneakyThrows
 	private ImageView buildImageViewFrom(Resource resource) {
@@ -118,4 +117,5 @@ public class ButtonsController implements Initializable {
 			return imageView;
 		}
 	}
+
 }

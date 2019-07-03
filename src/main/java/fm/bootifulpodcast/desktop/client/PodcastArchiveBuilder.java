@@ -43,7 +43,7 @@ public class PodcastArchiveBuilder {
 
 	@SneakyThrows
 	private static File doCreatePackage(String title, String description, String uid,
-																																					Media mp3, Media wav, File destination) {
+			Media mp3, Media wav, File destination) {
 
 		var staging = Files.createTempDirectory("staging").toFile();
 
@@ -54,18 +54,20 @@ public class PodcastArchiveBuilder {
 			log.debug("wrote " + xmlFile.getAbsolutePath() + " with content " + xml);
 		}
 
-		var zipFile = destination == null ? new File(staging, UUID.randomUUID().toString() + ".zip") : destination;
-		Assert.isTrue(zipFile.getName().endsWith(".zip"), "the output file name for the archive must end in .zip");
+		var zipFile = destination == null
+				? new File(staging, UUID.randomUUID().toString() + ".zip") : destination;
+		Assert.isTrue(zipFile.getName().endsWith(".zip"),
+				"the output file name for the archive must end in .zip");
 		var srcFiles = new ArrayList<File>();
 		srcFiles.add(xmlFile);
 		addMediaFilesToPackage(mp3, srcFiles);
 		addMediaFilesToPackage(wav, srcFiles);
 
 		try (var outputStream = new BufferedOutputStream(new FileOutputStream(zipFile));
-							var zipOutputStream = new ZipOutputStream(outputStream)) {
+				var zipOutputStream = new ZipOutputStream(outputStream)) {
 			for (var fileToZip : srcFiles) {
 				try (var inputStream = new BufferedInputStream(
-					new FileInputStream(fileToZip))) {
+						new FileInputStream(fileToZip))) {
 					var zipEntry = new ZipEntry(fileToZip.getName());
 					zipOutputStream.putNextEntry(zipEntry);
 					StreamUtils.copy(inputStream, zipOutputStream);
@@ -76,7 +78,7 @@ public class PodcastArchiveBuilder {
 	}
 
 	private static void addElementFor(Document doc, Element root, String elementName,
-																																			Map<String, String> attrs) {
+			Map<String, String> attrs) {
 		Element element = doc.createElement(elementName);
 		attrs.forEach(element::setAttribute);
 		root.appendChild(element);
@@ -94,7 +96,7 @@ public class PodcastArchiveBuilder {
 
 	@SneakyThrows
 	private static String buildXmlManifestForPackage(String title, String description,
-																																																		String uid, Media mp3, Media wav) {
+			String uid, Media mp3, Media wav) {
 
 		var docFactory = DocumentBuilderFactory.newInstance();
 		var docBuilder = docFactory.newDocumentBuilder();
@@ -142,7 +144,6 @@ public class PodcastArchiveBuilder {
 		return this.addMedia(WAV_EXT, intro, interview);
 	}
 
-
 	private PodcastArchiveBuilder addMedia(String ext, Media media) {
 		this.media.put(ext, Optional.of(media));
 		return this;
@@ -150,15 +151,15 @@ public class PodcastArchiveBuilder {
 
 	public File build() {
 		this.archivePackage = doCreatePackage(this.title, this.description, this.uid,
-			this.media.get(MP3_EXT).orElse(null),
-			this.media.get(WAV_EXT).orElse(null), null);
+				this.media.get(MP3_EXT).orElse(null),
+				this.media.get(WAV_EXT).orElse(null), null);
 		return this.archivePackage;
 	}
 
 	public File build(File archiveDestination) {
 		this.archivePackage = doCreatePackage(this.title, this.description, this.uid,
-			this.media.get(MP3_EXT).orElse(null),
-			this.media.get(WAV_EXT).orElse(null), archiveDestination);
+				this.media.get(MP3_EXT).orElse(null),
+				this.media.get(WAV_EXT).orElse(null), archiveDestination);
 		return this.archivePackage;
 	}
 

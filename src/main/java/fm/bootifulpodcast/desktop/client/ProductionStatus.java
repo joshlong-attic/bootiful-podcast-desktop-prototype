@@ -29,41 +29,33 @@ public class ProductionStatus {
 		this.executor = ex;
 		this.template = rt;
 		Assert.notNull(this.executor, "the executor must be non-null");
-		Assert.notNull(this.template, "the " + RestTemplate.class.getName() + " must be non-null");
+		Assert.notNull(this.template,
+				"the " + RestTemplate.class.getName() + " must be non-null");
 		Assert.notNull(uid, "the UID must be non-null");
 		this.statusUrl = statusUrl;
 
-//		this.rootServerUrl = serverRootUrl;
+		// this.rootServerUrl = serverRootUrl;
 	}
 
-/*	public String getUid() {
-		return uid;
-	}
+	/*
+	 * public String getUid() { return uid; }
+	 *
+	 * public boolean isPublished() { return published; }
+	 *
+	 * public String getErrorMessage() { return errorMessage; }
+	 *
+	 * public HttpStatus getHttpStatus() { return httpStatus; }
+	 *
+	 * public URI getStatusUrl() { return statusUrl; }
+	 */
 
-	public boolean isPublished() {
-		return published;
-	}
+	private URI statusUrl;
 
-	public String getErrorMessage() {
-		return errorMessage;
-	}
-
-	public HttpStatus getHttpStatus() {
-		return httpStatus;
-	}
-
-	public URI getStatusUrl() {
-		return statusUrl;
-	}*/
-
-	private URI statusUrl ;
-
-/*
-	public CompletableFuture<URI> checkStatus() {
-		Assert.notNull(this.executor, "the executor must not be null");
-		return CompletableFuture.supplyAsync(this::doPollProductionStatus, this.executor);
-	}
-*/
+	/*
+	 * public CompletableFuture<URI> checkStatus() { Assert.notNull(this.executor,
+	 * "the executor must not be null"); return
+	 * CompletableFuture.supplyAsync(this::doPollProductionStatus, this.executor); }
+	 */
 
 	@SneakyThrows
 	private URI pollProductionStatus() {

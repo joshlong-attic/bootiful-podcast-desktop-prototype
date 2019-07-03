@@ -14,20 +14,24 @@ import java.util.function.Function;
 class PodcastModel {
 
 	private final SimpleObjectProperty<File> introductionFileProperty = new SimpleObjectProperty<>();
+
 	private final SimpleObjectProperty<File> interviewFileProperty = new SimpleObjectProperty<>();
+
 	private final StringProperty titleProperty = new SimpleStringProperty();
+
 	private final StringProperty descriptionProperty = new SimpleStringProperty();
 
 	@Override
 	public String toString() {
 
-		Function<File, String> fileToString = file -> file == null ? "" : file.getAbsolutePath();
+		Function<File, String> fileToString = file -> file == null ? ""
+				: file.getAbsolutePath();
 
-		return "PodcastModel{" +
-			"introductionFile=" + fileToString.apply(introductionFileProperty.get()) +
-			", interviewFile=" + fileToString.apply(interviewFileProperty.get()) +
-			", title=" + titleProperty.get() +
-			", description=" + descriptionProperty.get() +
-			'}';
+		return "PodcastModel{" + "introductionFile="
+				+ fileToString.apply(introductionFileProperty.get()) + ", interviewFile="
+				+ fileToString.apply(interviewFileProperty.get()) + ", title="
+				+ titleProperty.get() + ", description=" + descriptionProperty.get()
+				+ '}';
 	}
+
 }

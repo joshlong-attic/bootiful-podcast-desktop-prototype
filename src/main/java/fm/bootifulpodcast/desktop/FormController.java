@@ -33,29 +33,38 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FormController implements Initializable {
 
 	public Label interviewFileLabel;
+
 	public Label introFileLabel;
 
 	public Label titlePromptLabel;
+
 	public Label descriptionPromptLabel;
 
 	public TextArea description;
+
 	public TextField title;
 
 	public Label introLabel;
+
 	public Label interviewLabel;
+
 	public Button introFileChooserButton;
+
 	public Button interviewFileChooserButton;
+
 	public Label filePromptLabel;
 
 	private final AtomicReference<Stage> stage = new AtomicReference<>();
+
 	private final AtomicBoolean valid = new AtomicBoolean(false);
 
 	private final PodcastModel podcastModel = new PodcastModel();
 
 	private final Messages messages;
-	private final ApplicationEventPublisher publisher;
-	private final FileChooser fileChooser;
 
+	private final ApplicationEventPublisher publisher;
+
+	private final FileChooser fileChooser;
 
 	FormController(Messages messages, ApplicationEventPublisher publisher) {
 		this.messages = messages;
@@ -63,8 +72,8 @@ public class FormController implements Initializable {
 
 		this.fileChooser = new FileChooser();
 		this.fileChooser.setTitle(messages.getMessage(getClass(), "file-chooser-title"));
-		this.fileChooser.getExtensionFilters()
-			.add(new FileChooser.ExtensionFilter(messages.getMessage(getClass(), "file-chooser-description"), "*.mp3"));
+		this.fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+				messages.getMessage(getClass(), "file-chooser-description"), "*.mp3"));
 	}
 
 	@EventListener
@@ -79,12 +88,12 @@ public class FormController implements Initializable {
 		var description = model.descriptionProperty().get();
 		var title = model.titleProperty().get();
 		var wasValidBefore = this.valid.get();
-		var isValidNow = (StringUtils.hasText(title) && StringUtils.hasText(description) && intro != null && interview != null);
+		var isValidNow = (StringUtils.hasText(title) && StringUtils.hasText(description)
+				&& intro != null && interview != null);
 		this.valid.set(isValidNow);
 		if (wasValidBefore != isValidNow) { // if they are different
-			var event = isValidNow ?
-				new PodcastValidationSuccessEvent(model) :
-				new PodcastValidationFailedEvent(model);
+			var event = isValidNow ? new PodcastValidationSuccessEvent(model)
+					: new PodcastValidationFailedEvent(model);
 			this.publisher.publishEvent(event);
 		}
 
@@ -93,52 +102,59 @@ public class FormController implements Initializable {
 	@Override
 	public void initialize(URL url, ResourceBundle resourceBundle) {
 
-		this.titlePromptLabel.setText(this.messages.getMessage(getClass(), "title-prompt"));
-		this.descriptionPromptLabel.setText(this.messages.getMessage(getClass(), "description-prompt"));
+		this.titlePromptLabel
+				.setText(this.messages.getMessage(getClass(), "title-prompt"));
+		this.descriptionPromptLabel
+				.setText(this.messages.getMessage(getClass(), "description-prompt"));
 		this.filePromptLabel.setText(this.messages.getMessage(getClass(), "file-prompt"));
 
-		List.of(this.interviewFileLabel, this.introFileLabel)
-			.forEach(label -> label.setText(this.messages.getMessage(getClass(), "no-file-selected")));
+		List.of(this.interviewFileLabel, this.introFileLabel).forEach(label -> label
+				.setText(this.messages.getMessage(getClass(), "no-file-selected")));
 
-		List.of(this.interviewFileChooserButton, this.introFileChooserButton)
-			.forEach(btn -> btn.setText(this.messages.getMessage(getClass(), "choose-file")));
+		List.of(this.interviewFileChooserButton, this.introFileChooserButton).forEach(
+				btn -> btn.setText(this.messages.getMessage(getClass(), "choose-file")));
 
-		this.introLabel.setText(this.messages.getMessage(getClass(), "introduction-file"));
-		this.interviewLabel.setText(this.messages.getMessage(getClass(), "interview-file"));
+		this.introLabel
+				.setText(this.messages.getMessage(getClass(), "introduction-file"));
+		this.interviewLabel
+				.setText(this.messages.getMessage(getClass(), "interview-file"));
 
 		this.title.textProperty().bindBidirectional(this.podcastModel.titleProperty());
-		this.description.textProperty().bindBidirectional(this.podcastModel.descriptionProperty());
+		this.description.textProperty()
+				.bindBidirectional(this.podcastModel.descriptionProperty());
 
-		List
-			.of(
-				fileSelectionTuple(this.interviewFileLabel, this.podcastModel.interviewFileProperty(), this.interviewFileChooserButton),
-				fileSelectionTuple(this.introFileLabel, this.podcastModel.introductionFileProperty(), this.introFileChooserButton))
-			.forEach(tuple -> {
-				var label = tuple.getT1();
-				label.setTextAlignment(TextAlignment.RIGHT);
-				label.setAlignment(Pos.CENTER_RIGHT);
-				HBox.setHgrow(label, Priority.ALWAYS);
+		List.of(fileSelectionTuple(this.interviewFileLabel,
+				this.podcastModel.interviewFileProperty(),
+				this.interviewFileChooserButton),
+				fileSelectionTuple(this.introFileLabel,
+						this.podcastModel.introductionFileProperty(),
+						this.introFileChooserButton))
+				.forEach(tuple -> {
+					var label = tuple.getT1();
+					label.setTextAlignment(TextAlignment.RIGHT);
+					label.setAlignment(Pos.CENTER_RIGHT);
+					HBox.setHgrow(label, Priority.ALWAYS);
 
-				var fileProperty = tuple.getT2();
-				fileProperty.addListener((observableValue, oldValue, newValue) -> label.setText(newValue.getAbsolutePath()));
+					var fileProperty = tuple.getT2();
+					fileProperty.addListener((observableValue, oldValue,
+							newValue) -> label.setText(newValue.getAbsolutePath()));
 
-				var button = tuple.getT3();
-				button.setOnMouseClicked(e -> Optional
-					.ofNullable(this.fileChooser.showOpenDialog(this.stage.get()))
-					.ifPresent(fileProperty::set));
-			});
+					var button = tuple.getT3();
+					button.setOnMouseClicked(e -> Optional
+							.ofNullable(this.fileChooser.showOpenDialog(this.stage.get()))
+							.ifPresent(fileProperty::set));
+				});
 
 		this.podcastModel.descriptionProperty().addListener(this::onChange);
 		this.podcastModel.titleProperty().addListener(this::onChange);
 		this.podcastModel.interviewFileProperty().addListener(this::onChange);
 		this.podcastModel.introductionFileProperty().addListener(this::onChange);
 
-
 	}
 
 	private Tuple3<Label, SimpleObjectProperty<File>, Button> fileSelectionTuple(
-		Label label, SimpleObjectProperty<File> prop, Button btn) {
+			Label label, SimpleObjectProperty<File> prop, Button btn) {
 		return Tuples.of(label, prop, btn);
 	}
-}
 
+}
