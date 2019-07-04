@@ -10,6 +10,7 @@ import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.springframework.context.event.EventListener;
@@ -19,9 +20,7 @@ import org.springframework.util.Assert;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.List;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component
@@ -47,6 +46,10 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 
 	public ImageView processingImage;
 
+	public VBox root;
+
+	private final List<Node> loading = new ArrayList<>(), loaded = new ArrayList<>();
+
 	public ProgressController(Messages messages, ApiClient client) {
 		this.messages = messages;
 		this.client = client;
@@ -70,21 +73,23 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 				.setText(this.messages.getMessage(getClass(), "click-to-download"));
 		this.downloadMediaHyperlink.setVisible(false);
 		this.downloadMediaHyperlink.setOnMouseClicked(this);
-		Platform.runLater(() -> this.show(false, this.downloadMediaHyperlink));
-
+		Platform.runLater(() -> this.show(this.loading));
+		this.loaded.add(this.downloadMediaHyperlink);
+		this.loading.addAll(List.of(this.processingLabel, this.processingImage));
 	}
 
 	@EventListener
 	public void processingCompleted(PodcastProductionCompletedEvent completed) {
 		this.uri.set(completed.getSource().getMedia());
 		Platform.runLater(() -> {
-			this.show(true, this.downloadMediaHyperlink);
-			this.show(false, this.processingImage, this.processingLabel);
+			this.show(this.loaded);
 		});
 	}
 
-	private void show(boolean visible, Node... nodes) {
-		List.of(nodes).forEach(n -> n.setVisible(visible));
+	private void show(Collection<Node> nodes) {
+		this.root.getChildren().clear();
+		nodes.forEach(n -> n.setVisible(true));
+		this.root.getChildren().addAll(nodes);
 	}
 
 	@EventListener
