@@ -8,8 +8,8 @@
 
     <center>
         <VBox fx:id="activePanel">
-            <fx:include source="form.fxml" fx:id="form"/>
-            <fx:include source="progress-screen.fxml" fx:id="progressScreen"/>
+            <fx:include VBox.vgrow="ALWAYS" source="form.fxml" fx:id="form"/>
+            <fx:include VBox.vgrow="ALWAYS" source="progress-screen.fxml" fx:id="progressScreen"/>
         </VBox>
     </center>
     <bottom>
