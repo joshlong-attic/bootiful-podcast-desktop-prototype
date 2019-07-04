@@ -7,14 +7,11 @@ import javafx.application.Platform;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
 import java.net.URL;
@@ -44,10 +41,10 @@ public class ButtonsController implements Initializable {
 
 	ButtonsController(ApiClient client) {
 		this.client = client;
-		this.disconnectedImageView = this.buildImageViewFrom(
-				new ClassPathResource("images/disconnected-icon.png"));
-		this.connectedImageView = this
-				.buildImageViewFrom(new ClassPathResource("images/connected-icon.png"));
+		this.disconnectedImageView = FxUtils.buildImageViewFromResource(new ClassPathResource("images/disconnected-icon.png"));
+		this.connectedImageView = FxUtils.buildImageViewFromResource(new ClassPathResource("images/connected-icon.png"));
+		List.of(this.disconnectedImageView, this.connectedImageView)
+			.forEach(img -> img.setFitHeight(30));
 	}
 
 	private void updateConnectedIcon(ImageView iv) {
@@ -80,7 +77,7 @@ public class ButtonsController implements Initializable {
 	@EventListener
 	public void productionStarted(PodcastProductionStartedEvent pse) {
 		List.of(this.publishButton, this.newPodcastButton)
-				.forEach(btn -> btn.setDisable(true));
+			.forEach(btn -> btn.setDisable(true));
 	}
 
 	@EventListener
@@ -112,21 +109,11 @@ public class ButtonsController implements Initializable {
 			var model = this.podcast.get();
 			var uuid = UUID.randomUUID().toString();
 			this.client.produce(uuid, model.titleProperty().get(),
-					model.descriptionProperty().get(),
-					model.introductionFileProperty().get(),
-					model.interviewFileProperty().get());
+				model.descriptionProperty().get(),
+				model.introductionFileProperty().get(),
+				model.interviewFileProperty().get());
 		});
 	}
 
-	@SneakyThrows
-	private ImageView buildImageViewFrom(Resource resource) {
-		try (var in = resource.getInputStream()) {
-			var imageView = new ImageView(new Image(in));
-			imageView.setSmooth(true);
-			imageView.setPreserveRatio(true);
-			imageView.setFitHeight(30);
-			return imageView;
-		}
-	}
 
 }

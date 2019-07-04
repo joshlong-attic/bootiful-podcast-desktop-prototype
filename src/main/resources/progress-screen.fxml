@@ -4,10 +4,12 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.image.ImageView?>
 <VBox alignment="CENTER" xmlns="http://javafx.com/javafx/8.0.999-ea" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="fm.bootifulpodcast.desktop.ProgressController">
 
     <Label fx:id="processingLabel" text="please hold..." textAlignment="CENTER" VBox.vgrow="ALWAYS" />
+    <ImageView fx:id="processingImage"/>
     <Hyperlink fx:id="downloadMediaHyperlink" text="click me" textAlignment="CENTER" VBox.vgrow="ALWAYS" />
 
 </VBox>
