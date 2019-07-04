@@ -23,8 +23,13 @@ class Messages {
 	}
 
 	public String getMessage(Class<?> clzz, String key, Object... params) {
-		return this.messageSource.getMessage(clzz.getSimpleName() + '.' + key, params,
-				this.locale);
+		try {
+			return this.messageSource.getMessage(clzz.getSimpleName() + '.' + key, params,
+					this.locale);
+		}
+		catch (Exception e) {
+			return this.messageSource.getMessage(key, params, this.locale);
+		}
 	}
 
 }

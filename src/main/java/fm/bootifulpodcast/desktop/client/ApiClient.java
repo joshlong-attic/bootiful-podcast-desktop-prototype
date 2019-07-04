@@ -1,5 +1,7 @@
 package fm.bootifulpodcast.desktop.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fm.bootifulpodcast.desktop.PodcastProductionCompletedEvent;
 import fm.bootifulpodcast.desktop.PodcastProductionStartedEvent;
 import fm.bootifulpodcast.desktop.StageReadyEvent;
@@ -9,22 +11,26 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.util.Assert;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.net.SocketException;
 import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,6 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ApiClient {
 
 	private final AtomicBoolean connected = new AtomicBoolean(false);
+
+	private final ObjectMapper objectMapper;
 
 	private final ScheduledExecutorService executor;
 
@@ -44,10 +52,10 @@ public class ApiClient {
 
 	private final int monitorDelayInSeconds;
 
-	public ApiClient(String serverUrl, ScheduledExecutorService executor,
+	public ApiClient(String serverUrl, ObjectMapper om, ScheduledExecutorService executor,
 			ApplicationEventPublisher publisher, RestTemplate restTemplate,
 			int interval) {
-
+		this.objectMapper = om;
 		this.monitorDelayInSeconds = interval;
 		this.executor = executor;
 		this.restTemplate = restTemplate;
@@ -57,10 +65,23 @@ public class ApiClient {
 		this.serverUrl = serverUrl.endsWith("/")
 				? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
 		this.actuatorUrl = this.serverUrl + "/actuator/health";
-
+		log.debug(
+				"going to monitor the Actuator health endpoint every " + interval + "s.");
 		log.debug("The server URL is " + this.serverUrl + " and the actuator URL is "
 				+ this.actuatorUrl);
+	}
 
+	@Async
+	@SneakyThrows
+	public CompletableFuture<File> download(URI mediaUri, File file) {
+		var urlResource = new UrlResource(mediaUri);
+		try (var inputStream = urlResource.getInputStream();
+				var outputStream = new FileOutputStream(file)) {
+			FileCopyUtils.copy(inputStream, outputStream);
+			log.debug("downloaded " + mediaUri.toString() + " to "
+					+ file.getAbsolutePath() + "!");
+		}
+		return CompletableFuture.completedFuture(file);
 	}
 
 	/*
@@ -76,14 +97,14 @@ public class ApiClient {
 
 	private void monitorConnectedEndpoint() {
 		try {
-			var typeReference = new ParameterizedTypeReference<Map<String, Object>>() {
-			};
-			var entity = this.restTemplate.exchange(this.actuatorUrl, HttpMethod.GET,
-					HttpEntity.EMPTY, typeReference);
-			var body = entity.getBody();
-			var jsonMap = Objects.requireNonNull(body);
+			var response = this.restTemplate.getForEntity(this.actuatorUrl, String.class);
+			var responseBody = response.getBody();
+			log.debug("Response from Actuator status endpoint: " + responseBody);
+			Map<String, Object> jsonMap = Objects.requireNonNull(objectMapper
+					.readValue(responseBody, new TypeReference<Map<String, Object>>() {
+					}));
 			var status = (String) jsonMap.get("status");
-			var isActuatorHealthy = entity.getStatusCode().is2xxSuccessful()
+			var isActuatorHealthy = response.getStatusCode().is2xxSuccessful()
 					&& status.equalsIgnoreCase("UP");
 			if (isActuatorHealthy && this.connected.compareAndSet(false, true)) {
 				publisher.publishEvent(new ApiConnectedEvent());
@@ -94,7 +115,7 @@ public class ApiClient {
 				log.debug("Could not connect to " + this.actuatorUrl);
 			}
 			if (this.connected.compareAndSet(true, false)) {
-				publisher.publishEvent(new ApiDisconnectedEvent());
+				this.publisher.publishEvent(new ApiDisconnectedEvent());
 			}
 		}
 	}

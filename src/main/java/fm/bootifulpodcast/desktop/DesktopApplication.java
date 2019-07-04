@@ -1,16 +1,15 @@
 package fm.bootifulpodcast.desktop;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fm.bootifulpodcast.desktop.client.ApiClient;
 import javafx.application.Application;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.event.EventListener;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
@@ -19,7 +18,6 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.concurrent.Executors;
@@ -36,10 +34,10 @@ public class DesktopApplication {
 
 	@Bean
 	ApiClient apiClient(@Value("${podcast.api.url}") String serverUrl,
+			@Value("${podcast.monitor.interval}") int interval, ObjectMapper om,
 			ApplicationEventPublisher publisher) {
-		var apiConnectionMonitorInterval = 5;
-		return new ApiClient(serverUrl, executor(), publisher, restTemplate(),
-				apiConnectionMonitorInterval);
+		return new ApiClient(serverUrl, om, executor(), publisher, restTemplate(),
+				interval);
 	}
 
 	@Bean
