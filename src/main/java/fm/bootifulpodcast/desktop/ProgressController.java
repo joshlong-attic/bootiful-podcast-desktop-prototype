@@ -42,27 +42,29 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 	public Label processingLabel;
 
 	public Hyperlink downloadMediaHyperlink;
+
 	public ImageView processingImage;
 
 	public ProgressController(Messages messages, ApiClient client) {
 		this.messages = messages;
 		this.client = client;
-		this.processingImage = FxUtils.buildImageViewFromResource(new ClassPathResource("images/loading.gif"));
+		this.processingImage = FxUtils
+				.buildImageViewFromResource(new ClassPathResource("images/loading.gif"));
 
 		var controllerClass = ProgressController.class;
 		this.fileChooserTitle = this.messages.getMessage(controllerClass,
-			"file-chooser-title");
+				"file-chooser-title");
 		this.fileDoneAlertTitle = this.messages.getMessage(controllerClass,
-			"file-done-alert-title");
+				"file-done-alert-title");
 		this.processingStatus = this.messages.getMessage(controllerClass,
-			"processing-status");
+				"processing-status");
 	}
 
 	@Override
 	public void initialize(URL url, ResourceBundle resourceBundle) {
 		this.processingLabel.setText(processingStatus);
 		this.downloadMediaHyperlink
-			.setText(this.messages.getMessage(getClass(), "click-to-download"));
+				.setText(this.messages.getMessage(getClass(), "click-to-download"));
 		this.downloadMediaHyperlink.setVisible(false);
 		this.downloadMediaHyperlink.setOnMouseClicked(this);
 	}
@@ -83,23 +85,23 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 		var resolvedUri = this.uri.get();
 		Platform.runLater(() -> {
 			var extFilter = new FileChooser.ExtensionFilter(this.fileChooserTitle,
-				"*.mp3", "*.wav");
+					"*.mp3", "*.wav");
 			var fileChooser = new FileChooser();
 			fileChooser.getExtensionFilters().add(extFilter);
 			Assert.notNull(this.stage.get(), "the stage must have been set");
 			Optional//
-				.ofNullable(fileChooser.showSaveDialog(this.stage.get())) //
-				.ifPresent(file -> this.client.download(resolvedUri, file)
-					.thenAccept(downloadedFile -> Platform.runLater(() -> {
-						var alert = new Alert(Alert.AlertType.INFORMATION);
-						alert.setTitle(this.fileDoneAlertTitle);
-						alert.setHeaderText(null);
-						alert.setContentText(
-							messages.getMessage(ProgressController.class,
-								"file-has-been-downloaded",
-								downloadedFile.getAbsolutePath()));
-						alert.showAndWait();
-					})));
+					.ofNullable(fileChooser.showSaveDialog(this.stage.get())) //
+					.ifPresent(file -> this.client.download(resolvedUri, file)
+							.thenAccept(downloadedFile -> Platform.runLater(() -> {
+								var alert = new Alert(Alert.AlertType.INFORMATION);
+								alert.setTitle(this.fileDoneAlertTitle);
+								alert.setHeaderText(null);
+								alert.setContentText(
+										messages.getMessage(ProgressController.class,
+												"file-has-been-downloaded",
+												downloadedFile.getAbsolutePath()));
+								alert.showAndWait();
+							})));
 		});
 
 	}

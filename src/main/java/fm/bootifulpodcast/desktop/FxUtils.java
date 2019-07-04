@@ -13,8 +13,9 @@ abstract class FxUtils {
 			var imageView = new ImageView(new Image(in));
 			imageView.setSmooth(true);
 			imageView.setPreserveRatio(true);
-//			imageView.setFitHeight(30);
+			// imageView.setFitHeight(30);
 			return imageView;
 		}
 	}
+
 }
