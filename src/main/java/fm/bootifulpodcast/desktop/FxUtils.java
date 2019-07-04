@@ -8,6 +8,13 @@ import org.springframework.core.io.Resource;
 abstract class FxUtils {
 
 	@SneakyThrows
+	public static Image buildImageFromResource(Resource r) {
+		try (var in = r.getInputStream()) {
+			return new Image(in);
+		}
+	}
+
+	@SneakyThrows
 	public static ImageView buildImageViewFromResource(Resource resource) {
 		try (var in = resource.getInputStream()) {
 			var imageView = new ImageView(new Image(in));

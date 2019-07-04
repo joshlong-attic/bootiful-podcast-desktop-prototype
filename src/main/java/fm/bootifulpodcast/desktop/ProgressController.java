@@ -4,6 +4,7 @@ import fm.bootifulpodcast.desktop.client.ApiClient;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
@@ -18,6 +19,7 @@ import org.springframework.util.Assert;
 
 import java.net.URI;
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,8 +50,6 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 	public ProgressController(Messages messages, ApiClient client) {
 		this.messages = messages;
 		this.client = client;
-		this.processingImage = FxUtils
-				.buildImageViewFromResource(new ClassPathResource("images/loading.gif"));
 
 		var controllerClass = ProgressController.class;
 		this.fileChooserTitle = this.messages.getMessage(controllerClass,
@@ -63,16 +63,28 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 	@Override
 	public void initialize(URL url, ResourceBundle resourceBundle) {
 		this.processingLabel.setText(processingStatus);
+		this.processingImage.setImage(FxUtils
+				.buildImageFromResource(new ClassPathResource("images/loading.gif")));
+
 		this.downloadMediaHyperlink
 				.setText(this.messages.getMessage(getClass(), "click-to-download"));
 		this.downloadMediaHyperlink.setVisible(false);
 		this.downloadMediaHyperlink.setOnMouseClicked(this);
+		Platform.runLater(() -> this.show(false, this.downloadMediaHyperlink));
+
 	}
 
 	@EventListener
 	public void processingCompleted(PodcastProductionCompletedEvent completed) {
 		this.uri.set(completed.getSource().getMedia());
-		Platform.runLater(() -> this.downloadMediaHyperlink.setVisible(true));
+		Platform.runLater(() -> {
+			this.show(true, this.downloadMediaHyperlink);
+			this.show(false, this.processingImage, this.processingLabel);
+		});
+	}
+
+	private void show(boolean visible, Node... nodes) {
+		List.of(nodes).forEach(n -> n.setVisible(visible));
 	}
 
 	@EventListener
