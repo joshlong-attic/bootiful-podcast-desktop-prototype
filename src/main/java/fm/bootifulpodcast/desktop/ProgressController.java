@@ -86,20 +86,19 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 			var fileChooser = new FileChooser();
 			fileChooser.getExtensionFilters().add(extFilter);
 			Assert.notNull(this.stage.get(), "the stage must have been set");
-			Optional.ofNullable(fileChooser.showSaveDialog(this.stage.get()))
+			Optional//
+					.ofNullable(fileChooser.showSaveDialog(this.stage.get())) //
 					.ifPresent(file -> this.client.download(resolvedUri, file)
-							.thenAccept(downloadedFile -> {
-								Platform.runLater(() -> {
-									var alert = new Alert(Alert.AlertType.INFORMATION);
-									alert.setTitle(this.fileDoneAlertTitle);
-									alert.setHeaderText(null);
-									alert.setContentText(
-											messages.getMessage(ProgressController.class,
-													"file-has-been-downloaded",
-													downloadedFile.getAbsolutePath()));
-									alert.showAndWait();
-								});
-							}));
+							.thenAccept(downloadedFile -> Platform.runLater(() -> {
+								var alert = new Alert(Alert.AlertType.INFORMATION);
+								alert.setTitle(this.fileDoneAlertTitle);
+								alert.setHeaderText(null);
+								alert.setContentText(
+										messages.getMessage(ProgressController.class,
+												"file-has-been-downloaded",
+												downloadedFile.getAbsolutePath()));
+								alert.showAndWait();
+							})));
 		});
 
 	}
