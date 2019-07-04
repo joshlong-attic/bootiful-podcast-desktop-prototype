@@ -76,13 +76,10 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 
 	@Override
 	public void handle(MouseEvent mouseEvent) {
-
 		var resolvedUri = this.uri.get();
-
 		Platform.runLater(() -> {
-
-			var extFilter = new FileChooser.ExtensionFilter(fileChooserTitle, "*.mp3",
-					"*.wav");
+			var extFilter = new FileChooser.ExtensionFilter(this.fileChooserTitle,
+					"*.mp3", "*.wav");
 			var fileChooser = new FileChooser();
 			fileChooser.getExtensionFilters().add(extFilter);
 			Assert.notNull(this.stage.get(), "the stage must have been set");
