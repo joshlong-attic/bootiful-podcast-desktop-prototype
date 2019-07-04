@@ -54,13 +54,11 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 		this.messages = messages;
 		this.client = client;
 
-		var controllerClass = ProgressController.class;
-		this.fileChooserTitle = this.messages.getMessage(controllerClass,
-				"file-chooser-title");
-		this.fileDoneAlertTitle = this.messages.getMessage(controllerClass,
+		var thisClazz = ProgressController.class;
+		this.fileChooserTitle = this.messages.getMessage(thisClazz, "file-chooser-title");
+		this.fileDoneAlertTitle = this.messages.getMessage(thisClazz,
 				"file-done-alert-title");
-		this.processingStatus = this.messages.getMessage(controllerClass,
-				"processing-status");
+		this.processingStatus = this.messages.getMessage(thisClazz, "processing-status");
 	}
 
 	@Override
