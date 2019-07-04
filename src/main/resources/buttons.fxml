@@ -7,6 +7,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root"
       xmlns="http://javafx.com/javafx/8.0.999-ea"
       fx:controller="fm.bootifulpodcast.desktop.ButtonsController">
     <BorderPane style="-fx-background-color: #336699">

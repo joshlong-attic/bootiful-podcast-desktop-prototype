@@ -9,11 +9,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -35,12 +38,21 @@ public class ButtonsController implements Initializable {
 
 	private final ApiClient client;
 
+	private final ReadyFileHandler handler;
+
 	public Button newPodcastButton, publishButton, saveMediaToFileButton;
+
+	private final AtomicReference<URI> fileUri = new AtomicReference<URI>();
+
+	private final AtomicReference<Stage> stage = new AtomicReference<Stage>();
 
 	public HBox buttons;
 
-	ButtonsController(ApiClient client) {
+	public VBox root;
+
+	ButtonsController(ApiClient client, ReadyFileHandler handler) {
 		this.client = client;
+		this.handler = handler;
 		this.disconnectedImageView = FxUtils.buildImageViewFromResource(
 				new ClassPathResource("images/disconnected-icon.png"));
 		this.connectedImageView = FxUtils.buildImageViewFromResource(
@@ -49,12 +61,17 @@ public class ButtonsController implements Initializable {
 				.forEach(img -> img.setFitHeight(30));
 	}
 
+	@EventListener
+	public void stageIsReady(StageReadyEvent sre) {
+		this.stage.set(sre.getSource());
+	}
+
 	private void updateConnectedIcon(ImageView iv) {
 		Platform.runLater(() -> this.connectedIcon.setGraphic(iv));
 	}
 
 	@EventListener
-	public void disconnect(ApiDisconnectedEvent e) {
+	public void disconnected(ApiDisconnectedEvent e) {
 		log.info("disconnected (" + e.getClass().getName() + ")");
 		this.connected.set(false);
 		this.updateConnectedIcon(this.disconnectedImageView);
@@ -77,14 +94,19 @@ public class ButtonsController implements Initializable {
 	}
 
 	@EventListener
-	public void productionStarted(PodcastProductionStartedEvent pse) {
-		List.of(this.publishButton, this.newPodcastButton)
-				.forEach(btn -> btn.setDisable(true));
+	public void productionStarted(PodcastProductionStartedEvent ppse) {
+		Platform.runLater(() -> {
+			List.of(this.publishButton, this.newPodcastButton)
+					.forEach(btn -> btn.setDisable(true));
+		});
 	}
 
 	@EventListener
 	public void productionFinished(PodcastProductionCompletedEvent ppce) {
-		List.of(this.newPodcastButton).forEach(btn -> btn.setDisable(false));
+		this.fileUri.set(ppce.getSource().getMedia());
+		Platform.runLater(() -> {
+			List.of(this.newPodcastButton).forEach(btn -> btn.setDisable(false));
+		});
 	}
 
 	@EventListener
@@ -92,6 +114,15 @@ public class ButtonsController implements Initializable {
 		log.debug("the podcast is valid.");
 		this.podcast.set(pvse.getSource());
 		this.evaluatePublishButtonState();
+	}
+
+	@EventListener
+	public void processingCompleted(PodcastProductionCompletedEvent completed) {
+		Platform.runLater(() -> {
+			List.of(this.saveMediaToFileButton).forEach(btn -> btn.setDisable(false));
+			this.buttons.getChildren().clear();
+			this.buttons.getChildren().add(this.saveMediaToFileButton);
+		});
 	}
 
 	private void evaluatePublishButtonState() {
@@ -115,6 +146,8 @@ public class ButtonsController implements Initializable {
 					model.introductionFileProperty().get(),
 					model.interviewFileProperty().get());
 		});
+		this.saveMediaToFileButton.setOnMouseClicked(
+				e -> this.handler.handle(this.stage.get(), this.fileUri.get()));
 	}
 
 }

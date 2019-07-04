@@ -5,34 +5,28 @@ import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 public class ProgressController implements Initializable, EventHandler<MouseEvent> {
 
-	private final String processingStatus;
-
-	private final String fileDoneAlertTitle;
-
 	private final Messages messages;
-
-	private final String fileChooserTitle;
 
 	private final AtomicReference<URI> uri = new AtomicReference<URI>();
 
@@ -48,22 +42,22 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 
 	public VBox root;
 
-	private final List<Node> loading = new ArrayList<>(), loaded = new ArrayList<>();
+	private final ReadyFileHandler handler;
 
-	public ProgressController(Messages messages, ApiClient client) {
+	private final List<Node> loading = new ArrayList<>();
+
+	private final List<Node> loaded = new ArrayList<>();
+
+	public ProgressController(Messages messages, ReadyFileHandler rfh, ApiClient client) {
 		this.messages = messages;
+		this.handler = rfh;
 		this.client = client;
-
-		var thisClazz = ProgressController.class;
-		this.fileChooserTitle = this.messages.getMessage(thisClazz, "file-chooser-title");
-		this.fileDoneAlertTitle = this.messages.getMessage(thisClazz,
-				"file-done-alert-title");
-		this.processingStatus = this.messages.getMessage(thisClazz, "processing-status");
 	}
 
 	@Override
 	public void initialize(URL url, ResourceBundle resourceBundle) {
-		this.processingLabel.setText(processingStatus);
+
+		this.processingLabel.setText(this.messages.getMessage("processing-status"));
 		this.processingImage.setImage(FxUtils
 				.buildImageFromResource(new ClassPathResource("images/loading.gif")));
 
@@ -97,28 +91,9 @@ public class ProgressController implements Initializable, EventHandler<MouseEven
 
 	@Override
 	public void handle(MouseEvent mouseEvent) {
+		var actualStage = this.stage.get();
 		var resolvedUri = this.uri.get();
-		Platform.runLater(() -> {
-			var extFilter = new FileChooser.ExtensionFilter(this.fileChooserTitle,
-					"*.mp3", "*.wav");
-			var fileChooser = new FileChooser();
-			fileChooser.getExtensionFilters().add(extFilter);
-			Assert.notNull(this.stage.get(), "the stage must have been set");
-			Optional//
-					.ofNullable(fileChooser.showSaveDialog(this.stage.get())) //
-					.ifPresent(file -> this.client.download(resolvedUri, file)
-							.thenAccept(downloadedFile -> Platform.runLater(() -> {
-								var alert = new Alert(Alert.AlertType.INFORMATION);
-								alert.setTitle(this.fileDoneAlertTitle);
-								alert.setHeaderText(null);
-								alert.setContentText(
-										messages.getMessage(ProgressController.class,
-												"file-has-been-downloaded",
-												downloadedFile.getAbsolutePath()));
-								alert.showAndWait();
-							})));
-		});
-
+		handler.handle(actualStage, resolvedUri);
 	}
 
 }
